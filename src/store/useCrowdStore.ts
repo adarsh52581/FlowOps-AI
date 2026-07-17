@@ -166,13 +166,17 @@ export function computeTickUpdate(
     const rawPct = gate.capacityPct + delta
     // Clamp between 0–100 (CODING_RULES requirement 3)
     const newPct  = Math.max(0, Math.min(100, rawPct))
+    // WHY actualDelta not delta: if gate is at 2% and delta = -8, newPct clamps to 0.
+    // Using raw delta would display a -8 trend arrow even though capacity only fell by 2.
+    // The actual change is what the volunteer sees on the card — keep it honest.
+    const actualDelta = newPct - gate.capacityPct
     const newStatus   = computeStatus(newPct)
     const newRedirect = computeRedirect(id, newStatus)
 
     next[id] = {
       ...gate,
       capacityPct: newPct,
-      trend:       delta,          // positive = filling, negative = clearing
+      trend:       actualDelta,   // positive = filling, negative = clearing
       status:      newStatus,
       redirectTo:  newRedirect,
       waitMinutes: estimateWait(newPct),
