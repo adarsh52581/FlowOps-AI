@@ -53,16 +53,35 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
   useEffect(() => { gatesRef.current = gates }, [gates])
 
   // Track which gates were critical on the previous render to detect NEW crossings.
-  const prevCriticalSet = useRef<Set<string>>(new Set())
+  // Initialized with current critical gates to prevent double-firing on mount.
+  const prevCriticalSet = useRef<Set<string>>(
+    new Set(
+      Object.values(gates || {})
+        .filter(g => g.status === 'critical')
+        .map(g => g.id)
+    )
+  )
   // Guard against overlapping fetches — if one is in-flight, skip until done.
   const fetchInFlight   = useRef(false)
+  // Keep track of the last time we initiated a fetch to prevent tab-switching storms.
+  const lastFetchTime   = useRef(0)
 
   // ── Fetch wrapper ─────────────────────────────────────────────────
-  // Uses gatesRef.current so it always gets the live snapshot at call time,
-  // regardless of when the closure was created.
-  const fetchRec = useCallback(async () => {
+  // Uses gatesRef.current so it always gets the live snapshot at call time.
+  const fetchRec = useCallback(async (isVisibilityTrigger = false) => {
+    // Guard: do not make API calls if the tab is hidden
+    if (document.visibilityState === 'hidden') return
+
+    // Cooldown guard: if visibility change triggers this, skip if we fetched recently (<10s).
+    // This prevents fetch storms when alt-tabbing rapidly.
+    if (isVisibilityTrigger && Date.now() - lastFetchTime.current < 10000) {
+      console.log('[AiReasoningCard] Visibility catch-up skipped: fetched too recently (cooldown active).')
+      return
+    }
+
     if (fetchInFlight.current) return
     fetchInFlight.current = true
+    lastFetchTime.current = Date.now()
     setLoading(true)
     try {
       const result = await getCrowdRecommendation(gatesRef.current)
@@ -73,22 +92,58 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
     }
   }, [])  // Stable ref — no deps needed
 
-  // ── Periodic refresh (15–20 s) ───────────────────────────────────
+  // Guard to prevent double-fetching on initial mount in React Strict Mode
+  const hasFetchedOnMount = useRef(false)
+
+  // ── Periodic refresh (15–20 s) & Visibility Handling ───────────────
   useEffect(() => {
-    // Fetch once on mount so the card shows real data as soon as the key is set
-    fetchRec()
+    let timerId: ReturnType<typeof setInterval> | null = null
 
-    const id = setInterval(() => {
-      // gatesRef.current is always the latest snapshot (updated by the effect above).
-      // WHY ref: setInterval closures are created once and would otherwise read
-      // stale mount-time gates for the entire lifetime of the interval.
-      getCrowdRecommendation(gatesRef.current).then(result => {
-        if (!fetchInFlight.current) setRec(result)
-      })
-    }, REFRESH_INTERVAL_MS)
+    const startInterval = () => {
+      if (timerId) clearInterval(timerId)
+      timerId = setInterval(() => {
+        // Pause fetching if tab is hidden
+        if (document.visibilityState === 'hidden') return
+        fetchRec(false)
+      }, REFRESH_INTERVAL_MS)
+    }
 
-    return () => clearInterval(id)
-  }, [fetchRec])  // fetchRec is stable; adding it satisfies exhaustive-deps lint
+    const stopInterval = () => {
+      if (timerId) {
+        clearInterval(timerId)
+        timerId = null
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[AiReasoningCard] Tab visible: resuming periodic refresh & triggering fetch.')
+        fetchRec(true)
+        startInterval()
+      } else {
+        console.log('[AiReasoningCard] Tab hidden: pausing periodic refresh.')
+        stopInterval()
+      }
+    }
+
+    // Only run fetchRec once on mount (guards against Strict Mode double effect run)
+    if (!hasFetchedOnMount.current) {
+      hasFetchedOnMount.current = true
+      fetchRec(false)
+    }
+
+    // Start interval initially if document is visible
+    if (document.visibilityState === 'visible') {
+      startInterval()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      stopInterval()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [fetchRec])
 
   // ── Immediate trigger on NEW critical gate ───────────────────────────────
   // "whichever comes first" — if a gate crosses into critical for the first time,
@@ -96,6 +151,9 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
   useEffect(() => {
     // Guard: gates may be briefly undefined during HMR or before store hydration
     if (!gates || typeof gates !== 'object') return
+
+    // Guard: do not run logic if tab is hidden
+    if (document.visibilityState === 'hidden') return
 
     const currentCritical = new Set(
       Object.values(gates).filter(g => g.status === 'critical').map(g => g.id)
@@ -106,14 +164,13 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
     )
 
     if (newCriticalGates.length > 0) {
+      console.log(`[AiReasoningCard] New critical gate detected (${newCriticalGates.join(', ')}): triggering immediate fetch.`)
       // At least one gate has NEWLY entered critical — refresh immediately
-      getCrowdRecommendation(gates).then(result => {
-        if (!fetchInFlight.current) setRec(result)
-      })
+      fetchRec(false)
     }
 
     prevCriticalSet.current = currentCritical
-  }, [gates])  // Re-run on every gate tick
+  }, [gates, fetchRec])  // Re-run on every gate tick or stable fetchRec change
 
   // ── Derived display values ───────────────────────────────────────────────
   const accentColor = URGENCY_COLORS[rec.urgency] ?? URGENCY_COLORS.medium

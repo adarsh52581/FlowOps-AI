@@ -220,59 +220,78 @@ export async function getCrowdRecommendation(
   }
 
   const prompt = buildPrompt(gates)
+  const retries = [1500, 4000] // retry delay backoffs in ms
+  let attempt = 0
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  while (true) {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
-  try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal:  controller.signal,
-      body:    JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }],
-        }],
-        generationConfig: {
-          temperature:     0.3,   // Low temp: consistent, factual recommendations
-          maxOutputTokens: 300,   // Enough for our JSON shape; prevents runaway responses
-          topP:            0.8,
-        },
-      }),
-    })
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body:    JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }],
+          }],
+          generationConfig: {
+            temperature:     0.3,   // Low temp: consistent, factual recommendations
+            maxOutputTokens: 300,   // Enough for our JSON shape; prevents runaway responses
+            topP:            0.8,
+          },
+        }),
+      })
 
-    clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
 
-    if (!response.ok) {
-      console.error(`[getCrowdRecommendation] API error ${response.status}: ${response.statusText}`)
+      if (response.ok) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = await response.json() as any
+        const rawText: string | undefined =
+          data?.candidates?.[0]?.content?.parts?.[0]?.text
+
+        if (!rawText) {
+          console.error('[getCrowdRecommendation] Empty response from Gemini API')
+          return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
+        }
+
+        const parsed = parseGeminiText(rawText, gates)
+        if (!parsed) {
+          console.error('[getCrowdRecommendation] Failed to parse Gemini response:', rawText.slice(0, 200))
+          return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
+        }
+
+        return parsed
+      }
+
+      if (response.status === 429) {
+        if (attempt < retries.length) {
+          const backoff = retries[attempt]
+          attempt++
+          console.warn(`[getCrowdRecommendation] rate limited, backing off for ${backoff}ms before retry ${attempt}/${retries.length}`)
+          await new Promise(resolve => setTimeout(resolve, backoff))
+          continue
+        } else {
+          console.warn('[getCrowdRecommendation] rate limit retry threshold exceeded. API unreachable, using fallback')
+          return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
+        }
+      }
+
+      // If it is any other response status (403, 500, etc.), do not retry and fall back immediately
+      console.warn(`[getCrowdRecommendation] API error ${response.status}: ${response.statusText}. API unreachable, using fallback`)
+      return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
+
+    } catch (err) {
+      clearTimeout(timeoutId)
+
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.warn(`[getCrowdRecommendation] Request timed out after ${TIMEOUT_MS}ms. API unreachable, using fallback`)
+      } else {
+        console.error('[getCrowdRecommendation] Unexpected error:', err)
+      }
       return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = await response.json() as any
-    const rawText: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text
-
-    if (!rawText) {
-      console.error('[getCrowdRecommendation] Empty response from Gemini API')
-      return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
-    }
-
-    const parsed = parseGeminiText(rawText, gates)
-    if (!parsed) {
-      console.error('[getCrowdRecommendation] Failed to parse Gemini response:', rawText.slice(0, 200))
-      return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
-    }
-
-    return parsed
-  } catch (err) {
-    clearTimeout(timeoutId)
-
-    if (err instanceof Error && err.name === 'AbortError') {
-      console.warn(`[getCrowdRecommendation] Request timed out after ${TIMEOUT_MS}ms`)
-    } else {
-      console.error('[getCrowdRecommendation] Unexpected error:', err)
-    }
-    return { ...FALLBACK_RECOMMENDATION, generatedAt: new Date().toISOString() }
   }
 }
