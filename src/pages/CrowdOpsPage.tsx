@@ -2,30 +2,72 @@
  * CrowdOpsPage — Main volunteer dashboard.
  *
  * Layout: Status bar → SVG stadium map → AI recommendation → Gate density cards.
- * The map and cards are linked: clicking a gate card highlights it on the map
- * and vice versa. (State is local; Zustand arrives in the next sprint.)
+ * The map and cards are linked: clicking a gate card highlights it on the map.
+ *
+ * Data source: useCrowdStore (Zustand) — replaces static GATES import.
+ * The ticker is started on mount and stopped on unmount to avoid memory leaks.
+ * AI Recommendation card is intentionally NOT wired to the ticker — it stays
+ * hardcoded until the Gemini integration sprint.
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Activity, Wifi, ChevronDown } from 'lucide-react'
 import { StadiumMap } from '../components/crowd/StadiumMap'
 import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
-import { GATES, GATE_DISPLAY_ORDER, AI_RECOMMENDATION } from '../data/mockCrowdData'
+import { useCrowdStore } from '../store/useCrowdStore'
+import { GATE_DISPLAY_ORDER, AI_RECOMMENDATION } from '../data/mockCrowdData'
 
-/** Summary stats derived from mock data — will be computed from Zustand in next sprint */
-function useSummaryStats() {
-  const gates = Object.values(GATES)
+// ─── Last-updated display hook ────────────────────────────────────────────────
+
+function useRelativeTime(epochMs: number) {
+  const [label, setLabel] = useState('just now')
+
+  useEffect(() => {
+    function update() {
+      const secs = Math.floor((Date.now() - epochMs) / 1000)
+      setLabel(secs < 5 ? 'just now' : `${secs}s ago`)
+    }
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [epochMs])
+
+  return label
+}
+
+// ─── Summary stats (derived from live store state) ────────────────────────────
+
+function useSummaryStats(gates: ReturnType<typeof useCrowdStore>['gates']) {
+  const values = Object.values(gates)
   return {
-    critical: gates.filter(g => g.status === 'critical').length,
-    high:     gates.filter(g => g.status === 'high').length,
-    avgCapacity: Math.round(gates.reduce((acc, g) => acc + g.capacityPct, 0) / gates.length),
+    critical:    values.filter(g => g.status === 'critical').length,
+    high:        values.filter(g => g.status === 'high').length,
+    avgCapacity: Math.round(values.reduce((acc, g) => acc + g.capacityPct, 0) / values.length),
   }
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export function CrowdOpsPage() {
   const [activeGateId, setActiveGateId] = useState<string | null>('D')
-  const stats = useSummaryStats()
+
+  // Subscribe to live store slices — each selector is granular to avoid
+  // unnecessary re-renders when unrelated state changes.
+  const gates       = useCrowdStore(s => s.gates)
+  const lastUpdated = useCrowdStore(s => s.lastUpdated)
+  const startTicker = useCrowdStore(s => s.startTicker)
+  const stopTicker  = useCrowdStore(s => s.stopTicker)
+
+  const stats       = useSummaryStats(gates)
+  const updatedLabel = useRelativeTime(lastUpdated)
+
+  // Start ticker on mount; stop on unmount — prevents timer leaks if the
+  // component is conditionally rendered or the route changes.
+  useEffect(() => {
+    startTicker()
+    return () => stopTicker()
+  }, [startTicker, stopTicker])
 
   function handleGateSelect(id: string) {
     setActiveGateId(prev => prev === id ? null : id)
@@ -67,7 +109,7 @@ export function CrowdOpsPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Alert summary pills */}
+          {/* Alert summary pills — react to live store */}
           {stats.critical > 0 && (
             <div
               className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold"
@@ -86,8 +128,8 @@ export function CrowdOpsPage() {
               {stats.high} high
             </div>
           )}
-          {/* Live indicator */}
-          <div className="flex items-center gap-1.5" aria-label="Live feed active">
+          {/* Live indicator + last-updated label */}
+          <div className="flex items-center gap-1.5" aria-label={`Live feed, updated ${updatedLabel}`}>
             <span
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ backgroundColor: '#22C55E', boxShadow: '0 0 6px #22C55E' }}
@@ -107,7 +149,7 @@ export function CrowdOpsPage() {
           background: 'radial-gradient(ellipse at center, #0D1117 0%, #080808 100%)',
         }}
       >
-        {/* Subtle ambient glow behind the map */}
+        {/* Subtle ambient glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           aria-hidden="true"
@@ -116,8 +158,9 @@ export function CrowdOpsPage() {
           }}
         />
         <div className="absolute inset-0 p-2">
+          {/* Gates prop is now live store state — SVG colours update each tick */}
           <StadiumMap
-            gates={GATES}
+            gates={gates}
             highlightedGateId={activeGateId}
             onGateClick={handleGateSelect}
           />
@@ -135,12 +178,12 @@ export function CrowdOpsPage() {
         >
           <Wifi size={10} style={{ color: 'rgba(245,245,245,0.4)' }} />
           <span className="text-xs font-mono-data" style={{ color: 'rgba(245,245,245,0.4)', fontSize: '10px' }}>
-            Tap gate to inspect
+            Tap gate to inspect · Updated {updatedLabel}
           </span>
         </div>
       </section>
 
-      {/* ── Quick stats strip ───────────────────────────────────── */}
+      {/* ── Quick stats strip — live from store ─────────────────── */}
       <section
         className="flex items-center gap-px mx-4 mt-4 rounded-xl overflow-hidden"
         aria-label="Venue summary statistics"
@@ -148,35 +191,19 @@ export function CrowdOpsPage() {
       >
         {[
           { label: 'Avg Capacity', value: `${stats.avgCapacity}%`, color: '#F5F5F5' },
-          { label: 'Gates Open', value: '8 / 8', color: '#22C55E' },
-          { label: 'Alerts', value: `${stats.critical + stats.high}`, color: stats.critical > 0 ? '#DC2626' : '#D97706' },
+          { label: 'Gates Open',   value: `${Object.keys(gates).length} / ${Object.keys(gates).length}`, color: '#22C55E' },
+          { label: 'Alerts',       value: `${stats.critical + stats.high}`,
+            color: stats.critical > 0 ? '#DC2626' : stats.high > 0 ? '#D97706' : '#22C55E' },
         ].map((stat, i) => (
-          <div
-            key={stat.label}
-            className="flex-1 flex flex-col items-center py-2.5"
-            style={{
-              background: 'rgba(15,15,15,0.6)',
-              borderRight: i < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-            }}
-          >
-            <span
-              className="text-base font-bold font-mono-data leading-tight"
-              style={{ color: stat.color }}
-              aria-label={`${stat.label}: ${stat.value}`}
-            >
-              {stat.value}
-            </span>
-            <span className="text-xs mt-0.5" style={{ color: 'rgba(245,245,245,0.35)', fontSize: '10px' }}>
-              {stat.label}
-            </span>
-          </div>
+          <AnimatedStat key={stat.label} stat={stat} borderedRight={i < 2} />
         ))}
       </section>
 
       {/* ── Content area ────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 px-4 mt-4">
 
-        {/* AI Reasoning Card */}
+        {/* AI Reasoning Card — deliberately NOT connected to the ticker.
+            It will become dynamic in Sprint 4 (Gemini API). */}
         <AiReasoningCard recommendation={AI_RECOMMENDATION} />
 
         {/* Section header */}
@@ -185,7 +212,7 @@ export function CrowdOpsPage() {
             className="text-sm font-semibold"
             style={{ color: 'rgba(245,245,245,0.6)', letterSpacing: '0.06em', textTransform: 'uppercase', fontSize: '11px' }}
           >
-            Gate Status · {Object.keys(GATES).length} gates
+            Gate Status · {Object.keys(gates).length} gates
           </h2>
           <button
             className="flex items-center gap-1 text-xs"
@@ -197,10 +224,10 @@ export function CrowdOpsPage() {
           </button>
         </div>
 
-        {/* Gate density cards — sorted by urgency (critical first) */}
+        {/* Gate density cards — O(1) lookup by display order */}
         <div className="flex flex-col gap-2.5" role="list" aria-label="Gate density cards">
           {GATE_DISPLAY_ORDER.map(gateId => {
-            const gate = GATES[gateId]
+            const gate = gates[gateId]
             if (!gate) return null
             return (
               <div key={gate.id} role="listitem">
@@ -215,5 +242,57 @@ export function CrowdOpsPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+// ─── AnimatedStat ─────────────────────────────────────────────────────────────
+/**
+ * Wraps a stat value with a subtle flash animation when the value changes.
+ * Uses a CSS transition on opacity rather than a layout-shifting transform —
+ * no layout shift, respects prefers-reduced-motion via the global CSS rule.
+ */
+interface StatItem { label: string; value: string; color: string }
+
+function AnimatedStat({ stat, borderedRight }: { stat: StatItem; borderedRight: boolean }) {
+  const prevValue = useRef(stat.value)
+  const [flashing, setFlashing] = useState(false)
+
+  useEffect(() => {
+    if (stat.value !== prevValue.current) {
+      prevValue.current = stat.value
+      setFlashing(true)
+      // Flash duration: 600ms — long enough to notice, short enough not to annoy
+      const t = setTimeout(() => setFlashing(false), 600)
+      return () => clearTimeout(t)
+    }
+  }, [stat.value])
+
+  return (
+    <div
+      className="flex-1 flex flex-col items-center py-2.5"
+      style={{
+        background: 'rgba(15,15,15,0.6)',
+        borderRight: borderedRight ? '1px solid rgba(255,255,255,0.06)' : 'none',
+      }}
+    >
+      <span
+        className="text-base font-bold font-mono-data leading-tight transition-opacity duration-300"
+        style={{
+          color: stat.color,
+          // Flash: briefly raise opacity to draw attention; reduce-motion CSS will suppress this
+          opacity: flashing ? 1 : 0.9,
+          // Subtle scale-up on value change — no layout shift (transform doesn't affect flow)
+          transform: flashing ? 'scale(1.08)' : 'scale(1)',
+          transition: 'transform 300ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
+        }}
+        aria-label={`${stat.label}: ${stat.value}`}
+        aria-live="polite"
+      >
+        {stat.value}
+      </span>
+      <span className="text-xs mt-0.5" style={{ color: 'rgba(245,245,245,0.35)', fontSize: '10px' }}>
+        {stat.label}
+      </span>
+    </div>
   )
 }

@@ -96,6 +96,12 @@
     animation: none;
     opacity: 0.6;
   }
+
+  /* Also suppress the stat value flash/scale introduced in Sprint 2 */
+  .stat-value-flash {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 /* ─── Card & Glass Utilities ──────────────────────────────────── */
