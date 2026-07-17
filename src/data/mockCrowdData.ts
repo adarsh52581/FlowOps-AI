@@ -44,8 +44,10 @@ export interface FacilityData {
  *  CrowdOpsPage uses this for stable display order; the live sort will be dynamic in Sprint 3. */
 export const GATE_DISPLAY_ORDER: string[] = ['D', 'C', 'E', 'G', 'B', 'H', 'A', 'F']
 
-/** Hardcoded AI reasoning card data.
- *  NOT wired to the ticker — becomes dynamic in Sprint 4 (Gemini API integration). */
+/** Legacy static AI recommendation stub.
+ *  Superseded by getCrowdRecommendation.ts (Sprint 4 — Gemini integration).
+ *  Kept here as a reference shape; FALLBACK_RECOMMENDATION in getCrowdRecommendation.ts
+ *  is the live equivalent and is what AiReasoningCard uses as initial state. */
 export const AI_RECOMMENDATION = {
   triggeredBy: ['Gate D', 'Gate C'],
   reasoning:

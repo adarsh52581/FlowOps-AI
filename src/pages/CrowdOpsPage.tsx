@@ -4,10 +4,10 @@
  * Layout: Status bar → SVG stadium map → AI recommendation → Gate density cards.
  * The map and cards are linked: clicking a gate card highlights it on the map.
  *
- * Data source: useCrowdStore (Zustand) — replaces static GATES import.
- * The ticker is started on mount and stopped on unmount to avoid memory leaks.
- * AI Recommendation card is intentionally NOT wired to the ticker — it stays
- * hardcoded until the Gemini integration sprint.
+ * Data source: useCrowdStore (Zustand).
+ * Ticker lifecycle: started on mount, stopped on unmount.
+ * AI card: owns its own Gemini fetch cadence (15-20 s + new-critical-gate trigger).
+ * This page only passes the live gates snapshot down; it does not manage AI state.
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -16,7 +16,7 @@ import { StadiumMap } from '../components/crowd/StadiumMap'
 import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
 import { useCrowdStore } from '../store/useCrowdStore'
-import { GATE_DISPLAY_ORDER, AI_RECOMMENDATION } from '../data/mockCrowdData'
+import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
 
 // ─── Last-updated display hook ────────────────────────────────────────────────
 
@@ -204,7 +204,8 @@ export function CrowdOpsPage() {
 
         {/* AI Reasoning Card — deliberately NOT connected to the ticker.
             It will become dynamic in Sprint 4 (Gemini API). */}
-        <AiReasoningCard recommendation={AI_RECOMMENDATION} />
+        {/* AiReasoningCard owns its own Gemini fetch — we only pass the live gates */}
+        <AiReasoningCard gates={gates} />
 
         {/* Section header */}
         <div className="flex items-center justify-between mt-1">
