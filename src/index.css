@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ───────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Colors */
+    --color-bg:           #0A0A0A;
+    --color-surface:      #0F0F0F;
+    --color-surface-alt:  #141414;
+    --color-border:       rgba(255, 255, 255, 0.08);
+    --color-primary:      #15803D;
+    --color-primary-lit:  #22C55E;
+    --color-accent:       #D97706;
+    --color-accent-lit:   #F59E0B;
+    --color-critical:     #DC2626;
+    --color-critical-lit: #EF4444;
+    --color-text:         #F5F5F5;
+    --color-text-muted:   rgba(245, 245, 245, 0.5);
+    --color-text-dim:     rgba(245, 245, 245, 0.25);
+
+    /* Typography */
+    --font-heading: 'Calistoga', serif;
+    --font-body:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    /* Spacing (8dp rhythm) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+
+    /* Motion */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --dur-micro:     150ms;
+    --dur-standard:  250ms;
+    --dur-page:      400ms;
+
+    /* Bottom nav safe area */
+    --nav-height: 72px;
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-body);
+    color-scheme: dark;
+    /* Prevent rubber-band overscroll flash on iOS */
+    background-color: #0A0A0A;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: #0A0A0A;
+    color: #F5F5F5;
+    font-family: var(--font-body);
+    /* Suppress browser scrollbar for app-shell feel */
+    overflow-x: hidden;
+  }
+
+  #root {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Suppress scrollbar without losing function */
+  ::-webkit-scrollbar { width: 0; background: transparent; }
+}
+
+/* ─── Gate Hotspot Pulse Animation ───────────────────────────── */
+/* Signature moment: pulsing coloured rings on the stadium SVG map  */
+@keyframes gate-pulse {
+  0%   { transform: scale(1);   opacity: 0.85; }
+  50%  { transform: scale(1.5); opacity: 0.2; }
+  100% { transform: scale(1);   opacity: 0.85; }
+}
+
+.gate-pulse {
+  animation: gate-pulse 2s var(--ease-out-expo) infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* ─── prefers-reduced-motion: disable gate pulse specifically ─── */
+/* Per AGENTS.md + user constraint: only this animation is suppressed */
+@media (prefers-reduced-motion: reduce) {
+  .gate-pulse {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* ─── Card & Glass Utilities ──────────────────────────────────── */
+@layer components {
+  .glass-card {
+    background: rgba(15, 15, 15, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+  }
+
+  .glass-card-accent {
+    background: rgba(15, 15, 15, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-left: 3px solid #D97706;
+    border-radius: 12px;
+  }
+}
+
+/* ─── Status colour utilities ─────────────────────────────────── */
+/* Hardcoded hex — safe from JIT purge (per CODING_RULES.md) */
+@layer utilities {
+  .status-low      { color: #22C55E; }
+  .status-medium   { color: #D97706; }
+  .status-high     { color: #EA580C; }
+  .status-critical { color: #DC2626; }
+
+  .status-bg-low      { background-color: rgba(34, 197, 94, 0.12); }
+  .status-bg-medium   { background-color: rgba(217, 119, 6, 0.12); }
+  .status-bg-high     { background-color: rgba(234, 88, 12, 0.12); }
+  .status-bg-critical { background-color: rgba(220, 38, 38, 0.12); }
+
+  .status-border-low      { border-color: rgba(34, 197, 94, 0.3); }
+  .status-border-medium   { border-color: rgba(217, 119, 6, 0.3); }
+  .status-border-high     { border-color: rgba(234, 88, 12, 0.3); }
+  .status-border-critical { border-color: rgba(220, 38, 38, 0.3); }
+
+  /* Dot fill for gate hotspots on the SVG map */
+  .gate-fill-low      { fill: #22C55E; }
+  .gate-fill-medium   { fill: #D97706; }
+  .gate-fill-high     { fill: #EA580C; }
+  .gate-fill-critical { fill: #DC2626; }
+
+  /* Mono font for live numbers */
+  .font-mono-data { font-family: 'JetBrains Mono', monospace; }
+}
+
+/* ─── Micro-interaction defaults ──────────────────────────────── */
+@layer base {
+  button, [role="button"] {
+    cursor: pointer;
+    transition: opacity var(--dur-micro) var(--ease-out-expo),
+                transform var(--dur-micro) var(--ease-out-expo);
+  }
+  button:active, [role="button"]:active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+  button:focus-visible, a:focus-visible, [role="tab"]:focus-visible {
+    outline: 2px solid #22C55E;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
