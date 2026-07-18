@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { MessageSquare, AlertCircle, RefreshCw, Send, Loader2 } from 'lucide-react'
 import { getTranslation, type AiTranslation } from '../lib/getTranslation'
 
@@ -6,14 +6,30 @@ export function TranslatorPage() {
   const [inputText, setInputText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState<AiTranslation | null>(null)
+  const [cooldownMsg, setCooldownMsg] = useState<string | null>(null)
+  
+  // Guard against rapid submit mashing (rate limiting)
+  const lastFetchTime = useRef(0)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputText.trim()) return
 
+    const now = Date.now()
+    if (now - lastFetchTime.current < 5000) {
+      setCooldownMsg('Please wait a few seconds before translating again.')
+      // Clear message after the cooldown would be over
+      setTimeout(() => setCooldownMsg(null), 3000)
+      return
+    }
+
+    setCooldownMsg(null)
     setIsSubmitting(true)
     setResult(null)
+    
+    lastFetchTime.current = Date.now()
     const translationResult = await getTranslation(inputText)
+    
     setResult(translationResult)
     setIsSubmitting(false)
   }
@@ -99,6 +115,14 @@ export function TranslatorPage() {
       </div>
 
       {/* Results Section */}
+      {cooldownMsg && (
+        <div className="w-full max-w-md mt-4 p-3 rounded-xl animate-fade-in text-center" style={{ backgroundColor: 'rgba(217,119,6,0.15)', border: '1px solid rgba(251,191,36,0.3)' }}>
+          <p className="text-xs font-medium" style={{ color: '#FBBF24' }}>
+            {cooldownMsg}
+          </p>
+        </div>
+      )}
+
       {result && (
         <div 
           className="w-full max-w-md mt-8 glass-card p-5 animate-fade-in"

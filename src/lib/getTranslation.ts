@@ -83,37 +83,66 @@ export async function getTranslation(fanInput: string): Promise<AiTranslation> {
   }
 
   const prompt = buildTranslatorPrompt(fanInput)
+  const retries = [1500, 4000] // retry delay backoffs in ms
+  let attempt = 0
   
-  try {
+  while (true) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal:  controller.signal,
-      body:    JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature:     0.2,
-          maxOutputTokens: 250,
-        },
-      }),
-    })
+    try {
+      const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body:    JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature:     0.2,
+            maxOutputTokens: 250,
+          },
+        }),
+      })
 
-    clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
 
-    if (response.ok) {
-      const data = await response.json()
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      if (text) {
-        const parsed = parseResponseText(text)
-        if (parsed) return parsed
+      if (response.ok) {
+        const data = await response.json()
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (text) {
+          const parsed = parseResponseText(text)
+          if (parsed) return parsed
+        }
+        
+        console.error('[getTranslation] Empty or unparseable response from Gemini API')
+        return FALLBACK_TRANSLATION
       }
-    }
-  } catch (error) {
-    console.warn('[getTranslation] Fetch failed', error)
-  }
 
-  return FALLBACK_TRANSLATION
+      if (response.status === 429) {
+        if (attempt < retries.length) {
+          const backoff = retries[attempt]
+          attempt++
+          console.warn(`[getTranslation] rate limited, backing off for ${backoff}ms before retry ${attempt}/${retries.length}`)
+          await new Promise(resolve => setTimeout(resolve, backoff))
+          continue
+        } else {
+          console.warn('[getTranslation] rate limit retry threshold exceeded. API unreachable, using fallback')
+          return FALLBACK_TRANSLATION
+        }
+      }
+
+      console.warn(`[getTranslation] API error ${response.status}: ${response.statusText}. API unreachable, using fallback`)
+      return FALLBACK_TRANSLATION
+
+    } catch (err) {
+      clearTimeout(timeoutId)
+      
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.warn(`[getTranslation] Request timed out after ${TIMEOUT_MS}ms. API unreachable, using fallback`)
+      } else {
+        console.warn('[getTranslation] Fetch failed', err)
+      }
+      return FALLBACK_TRANSLATION
+    }
+  }
 }

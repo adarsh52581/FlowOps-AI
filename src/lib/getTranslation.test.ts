@@ -82,4 +82,69 @@ describe('getTranslation', () => {
     
     vi.unstubAllEnvs()
   })
+
+  it('should retry-with-backoff on 429 and eventually fallback if threshold exceeded', async () => {
+    vi.stubEnv('VITE_GEMINI_API_KEY', 'test_key')
+    
+    // Mock fetch to always return 429 Too Many Requests
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      statusText: 'Too Many Requests'
+    })
+    
+    // We don't want to actually wait 5.5 seconds during the test
+    vi.useFakeTimers()
+    
+    const promise = getTranslation('Help')
+    
+    // Fast-forward through the two retries (1500ms + 4000ms)
+    await vi.advanceTimersByTimeAsync(1500)
+    await vi.advanceTimersByTimeAsync(4000)
+    
+    const result = await promise
+    
+    // It should have tried initially + 2 retries = 3 total calls
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(result.source).toBe('fallback')
+    
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
+
+  it('should succeed on retry if subsequent call returns 200 OK', async () => {
+    vi.stubEnv('VITE_GEMINI_API_KEY', 'test_key')
+    
+    // First call fails with 429
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 429 })
+    
+    // Second call succeeds
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        candidates: [{
+          content: {
+            parts: [{
+              text: '```json\n{"englishTranslation": "Where is the bathroom?", "urgencyTag": "General Request"}\n```'
+            }]
+          }
+        }]
+      })
+    })
+    
+    vi.useFakeTimers()
+    const promise = getTranslation('Donde esta el bano?')
+    
+    // Fast-forward past the first retry delay
+    await vi.advanceTimersByTimeAsync(1500)
+    
+    const result = await promise
+    
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.source).toBe('gemini')
+    expect(result.englishTranslation).toBe('Where is the bathroom?')
+    
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
 })
