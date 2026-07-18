@@ -44,17 +44,4 @@ export interface FacilityData {
  *  CrowdOpsPage uses this for stable display order; the live sort will be dynamic in Sprint 3. */
 export const GATE_DISPLAY_ORDER: string[] = ['D', 'C', 'E', 'G', 'B', 'H', 'A', 'F']
 
-/** Legacy static AI recommendation stub.
- *  Superseded by getCrowdRecommendation.ts (Sprint 4 — Gemini integration).
- *  Kept here as a reference shape; FALLBACK_RECOMMENDATION in getCrowdRecommendation.ts
- *  is the live equivalent and is what AiReasoningCard uses as initial state. */
-export const AI_RECOMMENDATION = {
-  triggeredBy: ['Gate D', 'Gate C'],
-  reasoning:
-    'Gate D (East Stand) is at 91% capacity with a +8-point surge over the last 5 minutes — this is approaching the safety threshold. Gate C is also elevated at 85% with the steepest inflow rate in the venue. Both gates share the same concourse entry from the metro drop-off.',
-  action:
-    'Redirect incoming fans from Gates C and D to Gate E (73%, South East) or Gate B (62%, North East). Deploy two volunteers to the Gate C / metro junction to intercept queues before they reach the turnstiles.',
-  confidence: 92,
-  urgency: 'high' as DensityStatus,
-  timestamp: '17:24 IST',
-}
+
