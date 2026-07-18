@@ -107,7 +107,10 @@ export async function getTranslation(fanInput: string): Promise<AiTranslation> {
       clearTimeout(timeoutId)
 
       if (response.ok) {
-        const data = await response.json()
+        interface GeminiResponse {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+        }
+        const data = await response.json() as GeminiResponse
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
         if (text) {
           const parsed = parseResponseText(text)

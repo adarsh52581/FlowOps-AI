@@ -75,7 +75,6 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
     // Cooldown guard: if visibility change triggers this, skip if we fetched recently (<10s).
     // This prevents fetch storms when alt-tabbing rapidly.
     if (isVisibilityTrigger && Date.now() - lastFetchTime.current < 10000) {
-      console.log('[AiReasoningCard] Visibility catch-up skipped: fetched too recently (cooldown active).')
       return
     }
 
@@ -117,11 +116,9 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[AiReasoningCard] Tab visible: resuming periodic refresh & triggering fetch.')
         fetchRec(true)
         startInterval()
       } else {
-        console.log('[AiReasoningCard] Tab hidden: pausing periodic refresh.')
         stopInterval()
       }
     }
@@ -164,7 +161,6 @@ export function AiReasoningCard({ gates }: AiReasoningCardProps) {
     )
 
     if (newCriticalGates.length > 0) {
-      console.log(`[AiReasoningCard] New critical gate detected (${newCriticalGates.join(', ')}): triggering immediate fetch.`)
       // At least one gate has NEWLY entered critical — refresh immediately
       fetchRec(false)
     }

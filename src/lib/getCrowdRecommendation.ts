@@ -247,10 +247,11 @@ export async function getCrowdRecommendation(
       clearTimeout(timeoutId)
 
       if (response.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = await response.json() as any
-        const rawText: string | undefined =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text
+        interface GeminiResponse {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
+        }
+        const data = await response.json() as GeminiResponse
+        const rawText: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (!rawText) {
           console.error('[getCrowdRecommendation] Empty response from Gemini API')
