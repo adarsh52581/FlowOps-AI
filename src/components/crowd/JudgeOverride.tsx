@@ -108,7 +108,7 @@ B,Gate B,North East,35,0,null,2`
             Judge Data Override
           </h2>
           <p className="text-xs text-white/50 mt-0.5">
-            Inject your own crowd CSV data to override the simulated stadium ticker feed.
+            Upload custom gate and facility data (CSV) to see how the Gemini reasoning engine analyzes it and generates redirect recommendations in real time.
           </p>
         </div>
 

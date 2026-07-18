@@ -39,12 +39,23 @@ function useRelativeTime(epochMs: number) {
 
 // ─── Summary stats (derived from live store state) ────────────────────────────
 
-function useSummaryStats(gates: Record<string, GateData>) {
+export function useSummaryStats(gates: Record<string, GateData>) {
+  let critical = 0
+  let high = 0
+  let totalCapacity = 0
   const values = Object.values(gates)
+  const count = values.length
+
+  for (const g of values) {
+    if (g.status === 'critical') critical++
+    else if (g.status === 'high') high++
+    totalCapacity += g.capacityPct
+  }
+
   return {
-    critical:    values.filter(g => g.status === 'critical').length,
-    high:        values.filter(g => g.status === 'high').length,
-    avgCapacity: Math.round(values.reduce((acc, g) => acc + g.capacityPct, 0) / values.length),
+    critical,
+    high,
+    avgCapacity: Math.round(totalCapacity / count),
   }
 }
 
