@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { useSummaryStats } from './CrowdOpsPage'
+import { useSummaryStats } from './useSummaryStats'
 import type { GateData } from '../data/mockCrowdData'
 
 describe('useSummaryStats', () => {

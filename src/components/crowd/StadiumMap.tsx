@@ -127,6 +127,7 @@ export function StadiumMap({ gates, highlightedGateId, onGateClick }: StadiumMap
         return (
           <g
             key={gate.id}
+            data-testid={`stadium-map-gate-${gate.id}`}
             style={{ cursor: onGateClick ? 'pointer' : 'default' }}
             onClick={() => onGateClick?.(gate.id)}
           >

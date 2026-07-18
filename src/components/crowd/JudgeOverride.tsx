@@ -32,6 +32,13 @@ export function JudgeOverride() {
     setErrorMsg(null)
     setSuccessMsg(null)
 
+    // Security (DoS prevention): enforce 5MB file size limit for synchronous parsing
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('File is too large. Maximum allowed size is 5MB.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string

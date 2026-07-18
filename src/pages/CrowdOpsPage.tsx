@@ -17,8 +17,8 @@ import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
 import { JudgeOverride } from '../components/crowd/JudgeOverride'
 import { useCrowdStore } from '../store/useCrowdStore'
-import { GATE_DISPLAY_ORDER, type GateData } from '../data/mockCrowdData'
-
+import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
+import { useSummaryStats } from '../lib/useSummaryStats'
 // ─── Last-updated display hook ────────────────────────────────────────────────
 
 function useRelativeTime(epochMs: number) {
@@ -35,28 +35,6 @@ function useRelativeTime(epochMs: number) {
   }, [epochMs])
 
   return label
-}
-
-// ─── Summary stats (derived from live store state) ────────────────────────────
-
-export function useSummaryStats(gates: Record<string, GateData>) {
-  let critical = 0
-  let high = 0
-  let totalCapacity = 0
-  const values = Object.values(gates)
-  const count = values.length
-
-  for (const g of values) {
-    if (g.status === 'critical') critical++
-    else if (g.status === 'high') high++
-    totalCapacity += g.capacityPct
-  }
-
-  return {
-    critical,
-    high,
-    avgCapacity: Math.round(totalCapacity / count),
-  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
