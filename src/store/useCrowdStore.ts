@@ -46,6 +46,8 @@ function syncToFirebase(
         gates,
         facilities,
         lastUpdated: Date.now(),
+      }).catch((err) => {
+        console.warn('[useCrowdStore] Sync write rejected (e.g. permission denied):', err)
       })
     } catch (err) {
       console.error('[useCrowdStore] Sync to Firebase failed:', err)
@@ -251,7 +253,6 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
 
     const next = computeTickUpdate(get().gates)
     set({ gates: next, lastUpdated: Date.now() })
-    syncToFirebase(next, get().facilities, false)
   },
 
   startTicker() {
