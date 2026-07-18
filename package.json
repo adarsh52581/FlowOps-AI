@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "firebase": "^12.16.0",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -25,6 +26,7 @@
     "oxlint": "^1.71.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
   }
 }

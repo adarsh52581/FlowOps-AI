@@ -1,0 +1,9 @@
+id,name,section,capacityPct,trend,redirectTo,waitMinutes
+A,Gate A,North Main,25,-1,null,1
+B,Gate B,North East,35,0,null,2
+C,Gate C,East VIP,12,-5,null,1
+D,Gate D,East Stand,88,4,E,13
+E,Gate E,South East,95,15,null,20
+F,Gate F,South Main,22,-3,null,1
+G,Gate G,West Stand,45,2,null,3
+H,Gate H,North West,10,-2,null,0

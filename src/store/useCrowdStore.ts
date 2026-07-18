@@ -13,6 +13,51 @@
 
 import { create } from 'zustand'
 import type { GateData, FacilityData, DensityStatus } from '../data/mockCrowdData'
+import { db, monitorDbConnection } from '../lib/firebase'
+import { ref, set } from 'firebase/database'
+
+let isDbConnectedGlobal = false
+let dbSyncTimeout: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Debounced sync to Firebase Realtime Database.
+ *
+ * WHY debouncing:
+ * The simulated ticker runs every 4–6s. Writing directly to RTDB on every tick would
+ * consume rate limits. We use a 3-second debounce on ticks, but override events
+ * (such as CSV uploads and manual resets) are synced immediately for instant feedback.
+ */
+function syncToFirebase(
+  gates: Record<string, GateData>,
+  facilities: Record<string, FacilityData>,
+  immediate = false
+) {
+  if (!isDbConnectedGlobal) return
+
+  if (dbSyncTimeout) {
+    clearTimeout(dbSyncTimeout)
+    dbSyncTimeout = null
+  }
+
+  const performSync = () => {
+    try {
+      const dbRef = ref(db, 'crowdState')
+      set(dbRef, {
+        gates,
+        facilities,
+        lastUpdated: Date.now(),
+      })
+    } catch (err) {
+      console.error('[useCrowdStore] Sync to Firebase failed:', err)
+    }
+  }
+
+  if (immediate) {
+    performSync()
+  } else {
+    dbSyncTimeout = setTimeout(performSync, 3000)
+  }
+}
 
 // ─── Initial data (moved here from mockCrowdData.ts) ──────────────────────────
 // Keyed objects kept — O(1) lookup graded by CODING_RULES.md.
@@ -126,10 +171,12 @@ function computeRedirect(gateId: string, status: DensityStatus): string | null {
 // ─── Store state & actions ────────────────────────────────────────────────────
 
 interface CrowdState {
-  gates:       Record<string, GateData>
-  facilities:  Record<string, FacilityData>
-  lastUpdated: number          // epoch ms — consumers can display "X sec ago"
-  tickerId:    ReturnType<typeof setInterval> | null
+  gates:               Record<string, GateData>
+  facilities:          Record<string, FacilityData>
+  lastUpdated:         number          // epoch ms — consumers can display "X sec ago"
+  tickerId:            ReturnType<typeof setInterval> | null
+  isFirebaseConnected: boolean
+  isOverrideActive:    boolean
 
   /** Start the simulated live feed ticker */
   startTicker: () => void
@@ -137,6 +184,10 @@ interface CrowdState {
   stopTicker:  () => void
   /** Apply a single tick mutation — exposed for unit-testing without a timer */
   applyTick:   () => void
+  /** Injects judge override data and stops simulation */
+  setOverrideData: (gates?: Record<string, GateData>, facilities?: Record<string, FacilityData>) => void
+  /** Resets to original simulation data and starts the ticker */
+  resetToSimulation: () => void
 }
 
 // ─── Ticker logic (pure function — no store ref) ──────────────────────────────
@@ -188,19 +239,26 @@ export function computeTickUpdate(
 // ─── Store creation ────────────────────────────────────────────────────────────
 
 export const useCrowdStore = create<CrowdState>((set, get) => ({
-  gates:       INITIAL_GATES,
-  facilities:  INITIAL_FACILITIES,
-  lastUpdated: Date.now(),
-  tickerId:    null,
+  gates:               INITIAL_GATES,
+  facilities:          INITIAL_FACILITIES,
+  lastUpdated:         Date.now(),
+  tickerId:            null,
+  isFirebaseConnected: false,
+  isOverrideActive:    false,
 
   applyTick() {
+    if (get().isOverrideActive) return
+
     const next = computeTickUpdate(get().gates)
     set({ gates: next, lastUpdated: Date.now() })
+    syncToFirebase(next, get().facilities, false)
   },
 
   startTicker() {
     // Guard: don't double-start
     if (get().tickerId !== null) return
+    // Guard: don't simulate when override is active
+    if (get().isOverrideActive) return
 
     // Random interval between 4–6 seconds per ARCHITECTURE.md spec
     const scheduleNext = () => {
@@ -223,4 +281,46 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
       set({ tickerId: null })
     }
   },
+
+  setOverrideData(gates, facilities) {
+    const { tickerId } = get()
+    if (tickerId !== null) {
+      clearTimeout(tickerId)
+    }
+
+    const nextGates = gates || get().gates
+    const nextFacilities = facilities || get().facilities
+
+    set({
+      gates:            nextGates,
+      facilities:       nextFacilities,
+      isOverrideActive: true,
+      tickerId:         null,
+      lastUpdated:      Date.now(),
+    })
+
+    syncToFirebase(nextGates, nextFacilities, true)
+  },
+
+  resetToSimulation() {
+    set({
+      gates:            INITIAL_GATES,
+      facilities:       INITIAL_FACILITIES,
+      isOverrideActive: false,
+      lastUpdated:      Date.now(),
+    })
+
+    syncToFirebase(INITIAL_GATES, INITIAL_FACILITIES, true)
+    get().startTicker()
+  },
 }))
+
+// Start connectivity monitor after store initialization
+try {
+  monitorDbConnection((connected) => {
+    isDbConnectedGlobal = connected
+    useCrowdStore.setState({ isFirebaseConnected: connected })
+  })
+} catch (err) {
+  console.warn('[useCrowdStore] Firebase connectivity listener failed:', err)
+}

@@ -15,6 +15,7 @@ import { Activity, Wifi, ChevronDown } from 'lucide-react'
 import { StadiumMap } from '../components/crowd/StadiumMap'
 import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
+import { JudgeOverride } from '../components/crowd/JudgeOverride'
 import { useCrowdStore } from '../store/useCrowdStore'
 import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
 
@@ -202,8 +203,9 @@ export function CrowdOpsPage() {
       {/* ── Content area ────────────────────────────────────────── */}
       <div className="flex flex-col gap-3 px-4 mt-4">
 
-        {/* AI Reasoning Card — deliberately NOT connected to the ticker.
-            It will become dynamic in Sprint 4 (Gemini API). */}
+        {/* Judge Data Override control panel */}
+        <JudgeOverride />
+
         {/* AiReasoningCard owns its own Gemini fetch — we only pass the live gates */}
         <AiReasoningCard gates={gates} />
 
