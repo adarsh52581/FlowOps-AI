@@ -83,7 +83,7 @@ H,Gate H,North West,10,-2,null,0`
 A,Gate A,North Main,250,-1,null,1
 B,Gate B,North East,35,0,null,2`
 
-  const handleSimulateInject = (csvText: string, isErrorCase: boolean) => {
+  const handleSimulateInject = (csvText: string) => {
     setErrorMsg(null)
     setSuccessMsg(null)
 
@@ -203,14 +203,14 @@ B,Gate B,North East,35,0,null,2`
             {/* Test helper injection buttons */}
             <button
               id="test-inject-valid"
-              onClick={() => handleSimulateInject(MOCK_VALID_CSV, false)}
+              onClick={() => handleSimulateInject(MOCK_VALID_CSV)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider border border-[#262626] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
               Mock Valid
             </button>
             <button
               id="test-inject-invalid"
-              onClick={() => handleSimulateInject(MOCK_INVALID_CSV, true)}
+              onClick={() => handleSimulateInject(MOCK_INVALID_CSV)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider border border-[#262626] bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
             >
               Mock Invalid

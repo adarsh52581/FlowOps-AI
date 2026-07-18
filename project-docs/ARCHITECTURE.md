@@ -37,12 +37,9 @@ a **reasoning layer** that turns that data into human-readable volunteer instruc
   at a glance.
 
 ## Backend / Cloud Services
-- Firebase: stores synthetic crowd data and any judge-uploaded datasets so state can
-  persist across a session/demo.
-- Cloud Run: hosts the deployed build.
-- Both integrated through Antigravity's MCP servers rather than called ad hoc — document
-  the actual service calls made (not just "MCP installed") so the integration is real,
-  not cosmetic.
+- **Firebase**: Stores synthetic crowd data and any judge-uploaded datasets so state can persist across a session/demo.
+- **Firebase Hosting**: Hosts the deployed production build. (Selected instead of Cloud Run due to Cloud Billing/UPI setup restrictions on this account; Firebase Hosting is free-tier and did not require billing integration).
+- Both integrated through Antigravity's MCP servers — documented actual service calls made so the integration is real, not cosmetic.
 
 ## Performance Considerations
 - 2D/SVG stadium map only — no 3D canvas libraries.

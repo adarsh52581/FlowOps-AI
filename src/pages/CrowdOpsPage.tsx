@@ -17,7 +17,7 @@ import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
 import { JudgeOverride } from '../components/crowd/JudgeOverride'
 import { useCrowdStore } from '../store/useCrowdStore'
-import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
+import { GATE_DISPLAY_ORDER, type GateData } from '../data/mockCrowdData'
 
 // ─── Last-updated display hook ────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ function useRelativeTime(epochMs: number) {
 
 // ─── Summary stats (derived from live store state) ────────────────────────────
 
-function useSummaryStats(gates: ReturnType<typeof useCrowdStore>['gates']) {
+function useSummaryStats(gates: Record<string, GateData>) {
   const values = Object.values(gates)
   return {
     critical:    values.filter(g => g.status === 'critical').length,
