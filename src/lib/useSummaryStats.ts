@@ -7,7 +7,7 @@ import type { GateData } from '../data/mockCrowdData'
  * @param gates - Record of gates keyed by ID
  * @returns Object containing critical count, high count, and rounded average capacity
  */
-export function useSummaryStats(gates: Record<string, GateData>) {
+export function computeSummaryStats(gates: Record<string, GateData>) {
   let critical = 0
   let high = 0
   let totalCapacity = 0

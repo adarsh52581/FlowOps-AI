@@ -5,8 +5,6 @@
  * - The TypeScript interfaces (GateData, FacilityData, DensityStatus) are the
  *   canonical shape contract for the CSV upload feature (Sprint 3). The CSV parser
  *   will validate uploaded data against these interfaces before writing to the store.
- * - AI_RECOMMENDATION stays here as a static stub until Gemini integration (Sprint 4).
- *   The AiReasoningCard imports it directly and is intentionally NOT wired to the ticker.
  * - GATE_DISPLAY_ORDER stays here: it's a UI display concern, not live state.
  *
  * The gate and facility data objects (GATES, FACILITIES) have been MOVED to
@@ -40,8 +38,8 @@ export interface FacilityData {
   status: DensityStatus
 }
 
-/** Ordered gate IDs for display — sorted by initial urgency (critical → high → medium → low).
- *  CrowdOpsPage uses this for stable display order; the live sort will be dynamic in Sprint 3. */
+/** Ordered gate IDs for display. This is a fixed display order based on initial mock data urgency, 
+ *  ensuring stable UI layout as real-time ticker values fluctuate. */
 export const GATE_DISPLAY_ORDER: string[] = ['D', 'C', 'E', 'G', 'B', 'H', 'A', 'F']
 
 

@@ -19,7 +19,7 @@ import { JudgeOverride } from '../components/crowd/JudgeOverride'
 import { AnimatedStat } from '../components/crowd/AnimatedStat'
 import { useCrowdStore } from '../store/useCrowdStore'
 import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
-import { useSummaryStats } from '../lib/useSummaryStats'
+import { computeSummaryStats } from '../lib/useSummaryStats'
 // ─── Last-updated display hook ────────────────────────────────────────────────
 
 function useRelativeTime(epochMs: number) {
@@ -50,7 +50,7 @@ export function CrowdOpsPage() {
   const startTicker = useCrowdStore(s => s.startTicker)
   const stopTicker  = useCrowdStore(s => s.stopTicker)
 
-  const stats       = useSummaryStats(gates)
+  const stats       = computeSummaryStats(gates)
   const updatedLabel = useRelativeTime(lastUpdated)
 
   // Start ticker on mount; stop on unmount — prevents timer leaks if the
@@ -207,14 +207,13 @@ export function CrowdOpsPage() {
           >
             Gate Status · {Object.keys(gates).length} gates
           </h2>
-          <button
+          <div
             className="flex items-center gap-1 text-xs"
             style={{ color: 'rgba(245,245,245,0.3)' }}
-            aria-label="Sort gates"
           >
             <ChevronDown size={12} aria-hidden="true" />
             <span>By urgency</span>
-          </button>
+          </div>
         </div>
 
         {/* Gate density cards — O(1) lookup by display order */}

@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { useSummaryStats } from './useSummaryStats'
+import { computeSummaryStats } from './useSummaryStats'
 import type { GateData } from '../data/mockCrowdData'
 
-describe('useSummaryStats', () => {
+describe('computeSummaryStats', () => {
   it('should return 0 counts and NaN avgCapacity when gates object is empty', () => {
     const emptyGates: Record<string, GateData> = {}
-    const stats = useSummaryStats(emptyGates)
+    const stats = computeSummaryStats(emptyGates)
 
     expect(stats.critical).toBe(0)
     expect(stats.high).toBe(0)
@@ -20,7 +20,7 @@ describe('useSummaryStats', () => {
       D: { id: 'D', status: 'low', capacityPct: 40 } as GateData,
     }
 
-    const stats = useSummaryStats(gates)
+    const stats = computeSummaryStats(gates)
     
     expect(stats.critical).toBe(1)
     expect(stats.high).toBe(1)

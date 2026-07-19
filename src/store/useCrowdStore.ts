@@ -17,47 +17,31 @@ import { db, monitorDbConnection } from '../lib/firebase'
 import { ref, set } from 'firebase/database'
 
 let isDbConnectedGlobal = false
-let dbSyncTimeout: ReturnType<typeof setTimeout> | null = null
-
 /**
- * Debounced sync to Firebase Realtime Database.
+ * Syncs override and reset events to Firebase Realtime Database.
  *
- * WHY debouncing:
- * The simulated ticker runs every 4–6s. Writing directly to RTDB on every tick would
- * consume rate limits. We use a 3-second debounce on ticks, but override events
- * (such as CSV uploads and manual resets) are synced immediately for instant feedback.
+ * The simulated ticker runs purely client-side and does NOT sync to Firebase 
+ * (as of the multi-tab architecture fix) to avoid quota burn. This function 
+ * is only called on explicit user actions (CSV Judge Override, Manual Reset),
+ * which are synced immediately.
  */
 function syncToFirebase(
   gates: Record<string, GateData>,
-  facilities: Record<string, FacilityData>,
-  immediate = false
+  facilities: Record<string, FacilityData>
 ) {
   if (!isDbConnectedGlobal) return
 
-  if (dbSyncTimeout) {
-    clearTimeout(dbSyncTimeout)
-    dbSyncTimeout = null
-  }
-
-  const performSync = () => {
-    try {
-      const dbRef = ref(db, 'crowdState')
-      set(dbRef, {
-        gates,
-        facilities,
-        lastUpdated: Date.now(),
-      }).catch((err) => {
-        console.warn('[useCrowdStore] Sync write rejected (e.g. permission denied):', err)
-      })
-    } catch (err) {
-      console.error('[useCrowdStore] Sync to Firebase failed:', err)
-    }
-  }
-
-  if (immediate) {
-    performSync()
-  } else {
-    dbSyncTimeout = setTimeout(performSync, 3000)
+  try {
+    const dbRef = ref(db, 'crowdState')
+    set(dbRef, {
+      gates,
+      facilities,
+      lastUpdated: Date.now(),
+    }).catch((err) => {
+      console.warn('[useCrowdStore] Sync write rejected (e.g. permission denied):', err)
+    })
+  } catch (err) {
+    console.error('[useCrowdStore] Sync to Firebase failed:', err)
   }
 }
 
@@ -300,7 +284,7 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
       lastUpdated:      Date.now(),
     })
 
-    syncToFirebase(nextGates, nextFacilities, true)
+    syncToFirebase(nextGates, nextFacilities)
   },
 
   resetToSimulation() {
@@ -311,7 +295,7 @@ export const useCrowdStore = create<CrowdState>((set, get) => ({
       lastUpdated:      Date.now(),
     })
 
-    syncToFirebase(INITIAL_GATES, INITIAL_FACILITIES, true)
+    syncToFirebase(INITIAL_GATES, INITIAL_FACILITIES)
     get().startTicker()
   },
 }))

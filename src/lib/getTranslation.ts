@@ -71,7 +71,8 @@ function parseResponseText(text: string): AiTranslation | null {
  * @returns Typed translation result; never throws.
  */
 export async function getTranslation(fanInput: string): Promise<AiTranslation> {
-  if (!fanInput || !fanInput.trim()) {
+  const safeInput = fanInput.trim().slice(0, 1000)
+  if (!safeInput) {
     return { ...FALLBACK_TRANSLATION, englishTranslation: 'No input provided.' }
   }
 
@@ -81,7 +82,7 @@ export async function getTranslation(fanInput: string): Promise<AiTranslation> {
     return FALLBACK_TRANSLATION
   }
 
-  const prompt = buildTranslatorPrompt(fanInput)
+  const prompt = buildTranslatorPrompt(safeInput)
   const retries = [1500, 4000] // retry delay backoffs in ms
   let attempt = 0
   

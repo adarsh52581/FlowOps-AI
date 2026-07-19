@@ -109,7 +109,7 @@ npm run dev
 Open `http://localhost:5173` in your browser.
 
 ### 5. Run Automated Test Suite
-To run all 44 unit and JSDOM integration tests:
+To run all 45 unit and JSDOM integration tests:
 ```bash
 npm test
 ```

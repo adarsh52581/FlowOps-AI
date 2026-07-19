@@ -63,6 +63,24 @@ describe('getTranslation', () => {
     vi.unstubAllEnvs()
   })
 
+  it('truncates fanInput to 1000 characters before sending to API', async () => {
+    vi.stubEnv('VITE_GEMINI_API_KEY', 'test_key')
+    
+    const longInput = 'A'.repeat(1500)
+    await getTranslation(longInput)
+    
+    // Check that fetch was called and extract the body of the request
+    expect(fetchMock).toHaveBeenCalled()
+    const fetchArgs = fetchMock.mock.calls[0][1]
+    const bodyText = JSON.parse(fetchArgs.body).contents[0].parts[0].text
+    
+    // The actual prompt should contain exactly 1000 'A's
+    expect(bodyText).toContain('A'.repeat(1000))
+    expect(bodyText).not.toContain('A'.repeat(1001))
+    
+    vi.unstubAllEnvs()
+  })
+
   it('returns fallback gracefully on malformed JSON response', async () => {
     vi.stubEnv('VITE_GEMINI_API_KEY', 'test_key')
     fetchMock.mockResolvedValueOnce({

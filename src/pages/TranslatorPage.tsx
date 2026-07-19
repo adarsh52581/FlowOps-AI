@@ -94,8 +94,12 @@ export function TranslatorPage() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isSubmitting}
+            maxLength={1000}
             aria-label="Input foreign language text to translate"
           />
+          <div className="text-right text-[10px] uppercase font-bold tracking-wide mt-[-8px]" style={{ color: 'rgba(245,245,245,0.4)' }}>
+            {inputText.length} / 1000
+          </div>
           <button
             type="submit"
             disabled={isSubmitting || !inputText.trim()}
@@ -163,7 +167,7 @@ export function TranslatorPage() {
 
           <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
             <p className="text-[10px] uppercase font-mono-data tracking-wider" style={{ color: 'rgba(245,245,245,0.2)' }}>
-              POWERED BY GEMINI 2.0 FLASH
+              {result.source === 'gemini' ? 'POWERED BY GEMINI 2.0 FLASH' : 'OFFLINE — USING FALLBACK RESPONSE'}
             </p>
           </div>
         </div>
