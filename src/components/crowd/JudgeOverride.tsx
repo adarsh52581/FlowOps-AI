@@ -169,7 +169,7 @@ B,Gate B,North East,35,0,null,2`
             className="cursor-pointer flex flex-col items-center gap-2 text-center"
           >
             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/70">
-              <Upload size={18} />
+              <Upload size={18} aria-hidden="true" />
             </div>
             <div>
               <span className="text-sm font-semibold text-[#F5F5F5] hover:underline">
@@ -202,7 +202,7 @@ B,Gate B,North East,35,0,null,2`
                 onClick={handleReset}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border border-[#262626] bg-[#1A1A1A] hover:bg-[#222] text-[#F5F5F5] transition-colors"
               >
-                <RefreshCw size={12} />
+                <RefreshCw size={12} aria-hidden="true" />
                 Reset
               </button>
             )}
@@ -232,7 +232,7 @@ B,Gate B,North East,35,0,null,2`
           className="mt-4 flex items-start gap-2 p-3 rounded-lg border border-[#EF4444]/30 bg-[#EF4444]/10 text-xs text-[#EF4444]"
           role="alert"
         >
-          <AlertCircle size={14} className="shrink-0 mt-0.5" />
+          <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <span className="font-semibold">Import Error:</span> {errorMsg}
           </div>
@@ -244,7 +244,7 @@ B,Gate B,North East,35,0,null,2`
           className="mt-4 flex items-start gap-2 p-3 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/10 text-xs text-[#22C55E]"
           role="alert"
         >
-          <CheckCircle size={14} className="shrink-0 mt-0.5" />
+          <CheckCircle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
           <div>
             <span className="font-semibold">Success:</span> {successMsg}
           </div>

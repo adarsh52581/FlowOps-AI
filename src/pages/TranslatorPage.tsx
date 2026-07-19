@@ -108,7 +108,7 @@ export function TranslatorPage() {
             }}
             aria-label={isSubmitting ? "Translating text" : "Translate fan request"}
           >
-            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
             {isSubmitting ? 'Translating...' : 'Translate Request'}
           </button>
         </form>

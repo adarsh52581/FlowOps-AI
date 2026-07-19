@@ -212,7 +212,7 @@ export function CrowdOpsPage() {
             style={{ color: 'rgba(245,245,245,0.3)' }}
             aria-label="Sort gates"
           >
-            <ChevronDown size={12} />
+            <ChevronDown size={12} aria-hidden="true" />
             <span>By urgency</span>
           </button>
         </div>
