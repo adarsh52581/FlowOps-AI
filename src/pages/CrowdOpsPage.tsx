@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Activity, Wifi, ChevronDown } from 'lucide-react'
+import { Activity, Wifi } from 'lucide-react'
 import { StadiumMap } from '../components/crowd/StadiumMap'
 import { DensityCard } from '../components/crowd/DensityCard'
 import { AiReasoningCard } from '../components/crowd/AiReasoningCard'
@@ -208,10 +208,9 @@ export function CrowdOpsPage() {
             Gate Status · {Object.keys(gates).length} gates
           </h2>
           <div
-            className="flex items-center gap-1 text-xs"
+            className="text-xs"
             style={{ color: 'rgba(245,245,245,0.3)' }}
           >
-            <ChevronDown size={12} aria-hidden="true" />
             <span>By urgency</span>
           </div>
         </div>
