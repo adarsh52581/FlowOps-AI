@@ -30,10 +30,15 @@ describe('StadiumMap', () => {
   it('visually highlights the selected gate', () => {
     render(<StadiumMap gates={mockGates} highlightedGateId="A" />)
     
-    // Check for the highlight ring presence implicitly by checking DOM or class 
-    // Since we can't easily assert on SVG stroke attributes without querying the exact child,
-    // we just verify it renders without error when a highlight is passed.
     const gateA = screen.getByTestId('stadium-map-gate-A')
-    expect(gateA).toBeTruthy()
+    
+    // The highlight ring is rendered as a circle with stroke="#F5F5F5"
+    const highlightRing = gateA.querySelector('circle[stroke="#F5F5F5"]')
+    expect(highlightRing).toBeTruthy()
+    
+    // Ensure Gate B does NOT have the highlight ring
+    const gateB = screen.getByTestId('stadium-map-gate-B')
+    const highlightRingB = gateB.querySelector('circle[stroke="#F5F5F5"]')
+    expect(highlightRingB).toBeFalsy()
   })
 })

@@ -1,4 +1,3 @@
-# FlowOps AI — Volunteer Crowd Ops Co-Pilot
 # FlowOps AI
 
 **FlowOps AI** is a **dynamic assistant** built for the **FIFA World Cup 2026**. It provides **real-time decision support** and **logical decision making** capabilities to stadium volunteers handling **crowd management** at high-density venues.
@@ -43,6 +42,7 @@ graph TD
 3. **Alt-Tab Visibility Cooldown**: A 10-second cooldown guard is active when tab visibility switches from hidden to visible, preventing API request storms if a user rapidly alt-tabs away and back.
 4. **Firebase Realtime Database Sync**: Connects to the database and keeps the `/crowdState` path updated exclusively on manual overrides and simulator resets.
 5. **CSV Ingestion & Validation**: Parses CSV uploads (supporting headers in both camelCase and snake_case), validates boundaries, and automatically maps row values to spatial coordinates (`mapX`, `mapY`) on the SVG stadium layout.
+6. **Context-Aware Multilingual Assistant**: A dedicated Translator module allowing volunteers to input fan requests. It parses the text, translates it clearly, and classifies the urgency into actionable tags (e.g., Medical Emergency vs General Request) to help volunteers prioritize responses.
 
 ---
 
@@ -109,7 +109,7 @@ npm run dev
 Open `http://localhost:5173` in your browser.
 
 ### 5. Run Automated Test Suite
-To run all 23 unit and JSDOM integration tests:
+To run all 44 unit and JSDOM integration tests:
 ```bash
 npm test
 ```
@@ -118,5 +118,5 @@ npm test
 
 ## 8. Architecture Documentation
 For complete technical plans, specifications, and walkthrough details, refer to:
-* **[project-docs/ARCHITECTURE.md](file:///d:/Projects/FlowOps%20AI/project-docs/ARCHITECTURE.md)** — detailed system data flow, O(1) structures, and Firebase connection rules.
-* **[project-docs/PROJECT_CONTEXT.md](file:///d:/Projects/FlowOps%20AI/project-docs/PROJECT_CONTEXT.md)** — original project challenge parameters and requirements.
+* **[project-docs/ARCHITECTURE.md](project-docs/ARCHITECTURE.md)** — detailed system data flow, O(1) structures, and Firebase connection rules.
+* **[project-docs/PROJECT_CONTEXT.md](project-docs/PROJECT_CONTEXT.md)** — original project challenge parameters and requirements.
