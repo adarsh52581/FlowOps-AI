@@ -34,4 +34,26 @@ describe('DensityCard', () => {
     
     expect(handleClick).toHaveBeenCalled()
   })
+
+  it('is focusable via Tab when onClick is provided', () => {
+    render(<DensityCard gate={mockGate} isHighlighted={false} onClick={() => {}} />)
+    const card = screen.getByRole('status')
+    expect(card.getAttribute('tabindex')).toBe('0')
+  })
+
+  it('activates onClick when Enter key is pressed', () => {
+    const handleClick = vi.fn()
+    render(<DensityCard gate={mockGate} isHighlighted={false} onClick={handleClick} />)
+    const card = screen.getByRole('status')
+    fireEvent.keyDown(card, { key: 'Enter', code: 'Enter' })
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('activates onClick when Space key is pressed', () => {
+    const handleClick = vi.fn()
+    render(<DensityCard gate={mockGate} isHighlighted={false} onClick={handleClick} />)
+    const card = screen.getByRole('status')
+    fireEvent.keyDown(card, { key: ' ', code: 'Space' })
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
 })

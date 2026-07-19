@@ -68,13 +68,23 @@ export function DensityCard({ gate, isHighlighted, onClick }: DensityCardProps) 
     (gate.redirectTo ? `. Redirect fans to Gate ${gate.redirectTo}.` : '') +
     ` Wait time approximately ${gate.waitMinutes} minutes.`
 
+  /** Keyboard handler: Enter or Space activates the card, matching native button behavior */
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault()  // Prevent page scroll on Space
+      onClick()
+    }
+  }
+
   return (
     <article
       role="status"
       aria-label={ariaLabel}
       aria-live={gate.status === 'critical' ? 'assertive' : 'polite'}
       onClick={onClick}
-      className="glass-card p-4 transition-all duration-200 cursor-pointer"
+      onKeyDown={handleKeyDown}
+      tabIndex={onClick ? 0 : undefined}
+      className="glass-card p-4 transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#22C55E] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0A0A0A]"
       style={{
         borderColor: isHighlighted ? cfg.borderColor : 'rgba(255,255,255,0.08)',
         boxShadow: isHighlighted

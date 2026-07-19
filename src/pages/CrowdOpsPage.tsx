@@ -20,6 +20,7 @@ import { AnimatedStat } from '../components/crowd/AnimatedStat'
 import { useCrowdStore } from '../store/useCrowdStore'
 import { GATE_DISPLAY_ORDER } from '../data/mockCrowdData'
 import { computeSummaryStats } from '../lib/useSummaryStats'
+import { buildGateDisplayOrder } from '../lib/buildGateDisplayOrder'
 // ─── Last-updated display hook ────────────────────────────────────────────────
 
 function useRelativeTime(epochMs: number) {
@@ -215,9 +216,9 @@ export function CrowdOpsPage() {
           </div>
         </div>
 
-        {/* Gate density cards — O(1) lookup by display order */}
+        {/* Gate density cards — renders every gate in the store, not just the standard 8 */}
         <div className="flex flex-col gap-2.5" role="list" aria-label="Gate density cards">
-          {GATE_DISPLAY_ORDER.map(gateId => {
+          {buildGateDisplayOrder(Object.keys(gates), GATE_DISPLAY_ORDER).map(gateId => {
             const gate = gates[gateId]
             if (!gate) return null
             return (

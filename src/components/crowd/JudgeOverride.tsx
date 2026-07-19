@@ -25,10 +25,8 @@ export function JudgeOverride() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
+  /** Shared file processing logic used by both file input and drag-and-drop */
+  const processFile = (file: File) => {
     setErrorMsg(null)
     setSuccessMsg(null)
 
@@ -46,7 +44,6 @@ export function JudgeOverride() {
 
       if (!result.success) {
         setErrorMsg(result.error || 'Parsing failed.')
-        // Clear input so user can try uploading same file name again
         if (fileInputRef.current) fileInputRef.current.value = ''
         return
       }
@@ -67,6 +64,27 @@ export function JudgeOverride() {
     }
 
     reader.readAsText(file)
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    processFile(file)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (!file) return
+    if (!file.name.endsWith('.csv')) {
+      setErrorMsg('Only .csv files are accepted.')
+      return
+    }
+    processFile(file)
   }
 
   const handleReset = () => {
@@ -153,8 +171,11 @@ B,Gate B,North East,35,0,null,2`
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Upload Action Card */}
-        <div className="flex flex-col items-center justify-center border-2 border-dashed border-[#262626] hover:border-white/20 transition-colors rounded-lg p-6 bg-white/[0.01]">
+        <div
+          className="flex flex-col items-center justify-center border-2 border-dashed border-[#262626] hover:border-white/20 transition-colors rounded-lg p-6 bg-white/[0.01]"
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
           <input
             type="file"
             accept=".csv"

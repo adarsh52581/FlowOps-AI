@@ -1,3 +1,0 @@
-id,name,section,capacityPct,trend,redirectTo,waitMinutes
-A,Gate A,North Main,250,-1,null,1
-B,Gate B,North East,35,0,null,2

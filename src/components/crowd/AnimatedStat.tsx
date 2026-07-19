@@ -9,21 +9,29 @@ export interface StatItem {
 /**
  * Wraps a stat value with a subtle flash animation when the value changes.
  * Uses a CSS transition on opacity rather than a layout-shifting transform —
- * no layout shift, respects prefers-reduced-motion via the global CSS rule.
+ * no layout shift. Respects prefers-reduced-motion by checking
+ * window.matchMedia directly and skipping the transition/transform.
  */
 export function AnimatedStat({ stat, borderedRight }: { stat: StatItem; borderedRight: boolean }) {
   const prevValue = useRef(stat.value)
   const [flashing, setFlashing] = useState(false)
 
+  /** True when the user's OS/browser prefers reduced motion */
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
   useEffect(() => {
     if (stat.value !== prevValue.current) {
       prevValue.current = stat.value
-      setFlashing(true)
-      // Flash duration: 600ms — long enough to notice, short enough not to annoy
-      const t = setTimeout(() => setFlashing(false), 600)
-      return () => clearTimeout(t)
+      if (!prefersReducedMotion) {
+        setFlashing(true)
+        // Flash duration: 600ms — long enough to notice, short enough not to annoy
+        const t = setTimeout(() => setFlashing(false), 600)
+        return () => clearTimeout(t)
+      }
     }
-  }, [stat.value])
+  }, [stat.value, prefersReducedMotion])
 
   return (
     <div
@@ -34,14 +42,14 @@ export function AnimatedStat({ stat, borderedRight }: { stat: StatItem; bordered
       }}
     >
       <span
-        className="text-base font-bold font-mono-data leading-tight transition-opacity duration-300"
+        className="text-base font-bold font-mono-data leading-tight"
         style={{
           color: stat.color,
-          // Flash: briefly raise opacity to draw attention; reduce-motion CSS will suppress this
           opacity: flashing ? 1 : 0.9,
-          // Subtle scale-up on value change — no layout shift (transform doesn't affect flow)
           transform: flashing ? 'scale(1.08)' : 'scale(1)',
-          transition: 'transform 300ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
+          transition: prefersReducedMotion
+            ? 'none'
+            : 'transform 300ms cubic-bezier(0.16,1,0.3,1), opacity 300ms ease',
         }}
         aria-label={`${stat.label}: ${stat.value}`}
         aria-live="polite"
