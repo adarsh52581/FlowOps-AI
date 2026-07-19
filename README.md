@@ -1,13 +1,12 @@
 # FlowOps AI — Volunteer Crowd Ops Co-Pilot
+# FlowOps AI
 
-FlowOps AI is a GenAI-enabled crowd management and operational intelligence tool designed specifically for stadium volunteers during the FIFA World Cup 2026. The solution integrates a local simulated real-time data ticker (visual density and wait times), an explainable Generative AI reasoning assistant (using the Gemini API) to generate volunteer scripts and crowd routing recommendations, and Firebase Realtime Database integration for synchronization. It includes an interactive SVG stadium hotspot map and a "Judge Data Override" CSV parser for testing specific crowd bottlenecks.
+**FlowOps AI** is a **dynamic assistant** built for the **FIFA World Cup 2026**. It provides **real-time decision support** and **logical decision making** capabilities to stadium volunteers handling **crowd management** at high-density venues.
 
----
+## Problem Statement & Persona
+We chose the **Volunteer** persona operating in the **Crowd Management** vertical.
 
-## 1. Chosen Vertical: Volunteer Persona
-During the FIFA World Cup 2026 explainer session, the organizers explicitly advised participants to choose one target group (Fans, Organizers, Volunteers, or Venue Staff) and focus on **depth over breadth** rather than building a shallow application trying to serve everyone. 
-
-FlowOps AI is deliberately built for the **Volunteer** persona. Volunteers are the frontline responders at the tournament, tasked with managing crowd flows, routing thousands of fans, and handling language barriers under extreme time pressure. By equipping them with a context-aware co-pilot, the tool translates raw stadium capacity numbers into clear, actionable redirect instructions and multilingual scripts, directly addressing the safety bottlenecks where crowd congestion occurs.
+During major events like the FIFA World Cup, volunteers are the frontline for crowd safety. They often lack real-time visibility into stadium bottlenecks and struggle with language barriers when helping international fans. FlowOps AI solves this by acting as a smart, real-time co-pilot that synthesizes raw turnstile data into actionable redirection strategies and translates fan requests instantly.
 
 ---
 

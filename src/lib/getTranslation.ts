@@ -26,8 +26,7 @@ const GEMINI_API_URL =
 const TIMEOUT_MS = 10_000
 
 export function buildTranslatorPrompt(fanInput: string): string {
-  return `You are a context-aware multilingual assistant for volunteers at a FIFA World Cup stadium.
-A fan has just said the following to a volunteer:
+  return `You are a dynamic assistant for the FIFA World Cup 2026. A fan has just said the following to a volunteer working in crowd management:
 
 "${fanInput}"
 

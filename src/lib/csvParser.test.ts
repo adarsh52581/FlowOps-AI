@@ -111,4 +111,75 @@ stall,arcade,Gaming Arcade,Ground Floor,5`
     expect(res.error).toContain('type')
     expect(res.error).toContain('must be one of')
   })
+
+  it('should reject NaN or invalid trend values', () => {
+    const csv = `id,name,section,capacityPct,trend
+A,Gate A,North Main,45,invalid`
+    const res = parseJudgeCsv(csv)
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('trend "invalid" must be a valid number')
+  })
+
+  it('should reject missing required facility columns', () => {
+    const csv = `id,type,label,location,waitMinutes
+restroom_ne,restroom,Restrooms — North East,,8`
+    const res = parseJudgeCsv(csv)
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('Missing required facility columns')
+  })
+
+  it('should reject NaN or negative facility waitMinutes', () => {
+    const csv1 = `id,type,label,location,waitMinutes
+restroom_ne,restroom,Restrooms,Level 2,invalid`
+    const res1 = parseJudgeCsv(csv1)
+    expect(res1.success).toBe(false)
+    expect(res1.error).toContain('waitMinutes "invalid" must be a non-negative number')
+
+    const csv2 = `id,type,label,location,waitMinutes
+restroom_ne,restroom,Restrooms,Level 2,-5`
+    const res2 = parseJudgeCsv(csv2)
+    expect(res2.success).toBe(false)
+    expect(res2.error).toContain('waitMinutes "-5" must be a non-negative number')
+  })
+
+  it('should reject NaN or negative gate waitMinutes', () => {
+    const csv1 = `id,name,section,capacityPct,trend,waitMinutes
+A,Gate A,North Main,45,3,invalid`
+    const res1 = parseJudgeCsv(csv1)
+    expect(res1.success).toBe(false)
+    expect(res1.error).toContain('waitMinutes "invalid" must be a non-negative number')
+
+    const csv2 = `id,name,section,capacityPct,trend,waitMinutes
+A,Gate A,North Main,45,3,-5`
+    const res2 = parseJudgeCsv(csv2)
+    expect(res2.success).toBe(false)
+    expect(res2.error).toContain('waitMinutes "-5" must be a non-negative number')
+  })
+
+  it('should properly compute facility status based on wait time', () => {
+    const csv = `id,type,label,location,waitMinutes
+fac1,restroom,R1,L1,4
+fac2,restroom,R2,L1,12
+fac3,restroom,R3,L1,18`
+    const res = parseJudgeCsv(csv)
+    expect(res.success).toBe(true)
+    expect(res.facilities?.fac1.status).toBe('low')
+    expect(res.facilities?.fac2.status).toBe('high')
+    expect(res.facilities?.fac3.status).toBe('critical')
+  })
+
+  it('should reject CSV with only headers', () => {
+    const csv = `id,name,section,capacityPct,trend`
+    const res = parseJudgeCsv(csv)
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('at least one data row')
+  })
+
+  it('should reject gate row with missing required columns if header matches but row has empty values', () => {
+    const csv = `id,name,section,capacityPct,trend
+A,,North Main,45,-3`
+    const res = parseJudgeCsv(csv)
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('Missing required gate columns')
+  })
 })

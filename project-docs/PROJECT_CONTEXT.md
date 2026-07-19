@@ -3,17 +3,17 @@
 ## App Name
 FlowOps AI — The Volunteer Co-Pilot (FIFA World Cup 2026 Stadium Companion)
 
-## Persona Scope (deliberately narrow)
-This app targets **one persona only: the Volunteer**. It does not attempt to serve fans,
-organizers, or venue staff. Two verticals only:
-1. Crowd Management (Explainable AI / XAI)
-2. Context-Aware Multilingual Assistance
+## Project Context & Hackathon Alignment
 
-Do not add features for other personas. Depth over breadth.
+This project, **FlowOps AI**, is a **dynamic assistant** built for the **FIFA World Cup 2026** challenge. It delivers **real-time decision support** and **logical decision making** for the **Volunteer** persona operating within the **Crowd Management** vertical.
 
-## Goal
-Give stadium volunteers a mobile, real-time "Heads-Up Display" that:
-- Reasons over crowd density data and issues plain-English redirect instructions
+## 1. Challenge & Persona Alignment
+We have selected the **Volunteer** target group, focusing deeply on their most critical pain point: handling massive crowd surges safely and effectively. Instead of a superficial app that tries to serve organizers and fans simultaneously, this tool acts as an intelligent co-pilot specifically for the frontline volunteer.
+
+## 2. Core Operational Mechanics
+- Reads real-time stadium gate capacity and wait-time data (mocked/simulated live).
+- Sends context slices to the Gemini API.
+- Generates specific, localized action scripts ("move fans from Gate D to Gate E")
   (not just raw numbers/dashboards).
 - Translates fan requests with awareness of urgency/context (e.g. "where's the bathroom"
   vs. a medical emergency), not literal word-for-word translation.
